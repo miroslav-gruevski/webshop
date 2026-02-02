@@ -119,10 +119,10 @@ export default function AccountPage() {
             {/* Avatar */}
             <div className="flex items-center gap-4 mb-6">
               <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
-                {user.name.charAt(0).toUpperCase()}
+                {user.name?.charAt(0).toUpperCase() || 'U'}
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-primary">{user.name}</h2>
+                <h2 className="text-lg font-semibold text-primary">{user.name || 'User'}</h2>
                 <Badge
                   variant={user.accountType === 'b2b' ? 'accent' : 'default'}
                   size="sm"

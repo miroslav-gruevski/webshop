@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, use } from 'react';
+import { useState, useCallback, use } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,7 @@ import {
   Truck,
   RotateCcw,
   ChevronRight,
+  Package,
 } from 'lucide-react';
 import { Button, Badge, FavouriteButton, useToast } from '@/components/ui';
 import { ProductGrid } from '@/components/products';
@@ -34,6 +35,11 @@ export default function ProductPage({ params }: ProductPageProps) {
   const { addToCart, isInCart, getItemQuantity, updateQuantity } = useCart();
   const { addToast } = useToast();
   const [quantity, setQuantity] = useState(1);
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
 
   const product = products.find((p) => p.slug === slug);
 
@@ -53,7 +59,7 @@ export default function ProductPage({ params }: ProductPageProps) {
 
   const inCart = isInCart(product.id);
   const cartQuantity = getItemQuantity(product.id);
-  const isExternalImage = product.image.startsWith('http');
+  const hasValidImage = product.image && product.image.startsWith('http') && !imageError;
 
   const handleAddToCart = () => {
     addToCart(product, quantity);
@@ -125,7 +131,7 @@ export default function ProductPage({ params }: ProductPageProps) {
       <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 mb-16">
         {/* Product Image */}
         <div className="relative aspect-square bg-background-secondary rounded-2xl border border-border overflow-hidden">
-          {isExternalImage ? (
+          {hasValidImage ? (
             <Image
               src={product.image}
               alt={product.name}
@@ -133,23 +139,12 @@ export default function ProductPage({ params }: ProductPageProps) {
               className="object-cover"
               sizes="(max-width: 1024px) 100vw, 50vw"
               priority
+              onError={handleImageError}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-background-secondary to-background-tertiary flex items-center justify-center">
               <div className="w-32 h-32 rounded-2xl bg-white flex items-center justify-center shadow-sm">
-                <svg
-                  className="w-16 h-16 text-primary"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={1.5}
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  />
-                </svg>
+                <Package className="w-16 h-16 text-foreground-light/50" strokeWidth={1.5} />
               </div>
             </div>
           )}

@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import {
   Search,
   ShoppingCart,
@@ -17,7 +17,11 @@ import {
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
-import { Button, Input, useToast } from '@/components/ui';
+import { Button, useToast } from '@/components/ui';
+import productsData from '@/data/products.json';
+import { Product } from '@/types';
+
+const products = productsData as unknown as Product[];
 
 const navigation = [
   { name: 'Home', href: '/' },
@@ -28,6 +32,7 @@ const navigation = [
 
 export default function Header() {
   const pathname = usePathname();
+  const router = useRouter();
   const { totalItems } = useCart();
   const { user, isAuthenticated, logout } = useAuth();
   const { addToast } = useToast();
@@ -35,8 +40,25 @@ export default function Header() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchContainerRef = useRef<HTMLDivElement>(null);
+
+  // Compute search suggestions
+  const searchSuggestions = useMemo(() => {
+    if (searchQuery.length < 2) return [];
+    const query = searchQuery.toLowerCase();
+    return products
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(query) ||
+          p.category.toLowerCase().includes(query) ||
+          p.shortDescription?.toLowerCase().includes(query)
+      )
+      .slice(0, 6);
+  }, [searchQuery]);
 
   // Handle sign out with toast notification
   const handleSignOut = useCallback(() => {
@@ -51,15 +73,53 @@ export default function Header() {
       setIsMenuOpen(false);
       setIsSearchOpen(false);
       setIsUserMenuOpen(false);
+      setShowSuggestions(false);
     }
   }, []);
 
-  // Handle click outside for user menu
+  // Handle click outside for user menu and search suggestions
   const handleClickOutside = useCallback((event: MouseEvent) => {
     if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
       setIsUserMenuOpen(false);
     }
+    if (searchContainerRef.current && !searchContainerRef.current.contains(event.target as Node)) {
+      setShowSuggestions(false);
+    }
   }, []);
+
+  // Handle keyboard navigation for search suggestions
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!showSuggestions || searchSuggestions.length === 0) return;
+
+    switch (e.key) {
+      case 'ArrowDown':
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) =>
+          prev < searchSuggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case 'ArrowUp':
+        e.preventDefault();
+        setSelectedSuggestionIndex((prev) =>
+          prev > 0 ? prev - 1 : searchSuggestions.length - 1
+        );
+        break;
+      case 'Enter':
+        if (selectedSuggestionIndex >= 0) {
+          e.preventDefault();
+          const selectedProduct = searchSuggestions[selectedSuggestionIndex];
+          router.push(`/products/${selectedProduct.slug}`);
+          setShowSuggestions(false);
+          setSearchQuery('');
+          setIsSearchOpen(false);
+        }
+        break;
+      case 'Escape':
+        setShowSuggestions(false);
+        setSelectedSuggestionIndex(-1);
+        break;
+    }
+  };
 
   useEffect(() => {
     document.addEventListener('keydown', handleKeyDown);
@@ -160,28 +220,110 @@ export default function Header() {
 
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-3">
-            {/* Search Box - Expandable */}
-            <div className="flex items-center">
+            {/* Search Box - Expandable with Autocomplete */}
+            <div ref={searchContainerRef} className="flex items-center relative">
               <form
                 onSubmit={handleSearch}
-                className={`flex items-center transition-all duration-300 overflow-hidden ${
-                  isSearchOpen ? 'w-64 opacity-100 mr-2' : 'w-0 opacity-0'
+                className={`flex items-center transition-all duration-300 ${
+                  isSearchOpen ? 'w-64 opacity-100 mr-2' : 'w-0 opacity-0 overflow-hidden'
                 }`}
               >
-                <Input
-                  type="search"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="h-9 text-sm"
-                  autoFocus={isSearchOpen}
-                />
+                <div className="relative w-full">
+                  <input
+                    ref={searchInputRef}
+                    type="search"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                      setSelectedSuggestionIndex(-1);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleSearchKeyDown}
+                    className="w-full h-9 px-3 pr-8 bg-white border border-border rounded-lg text-primary text-sm placeholder-foreground-light transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                    aria-label="Search products"
+                    aria-autocomplete="list"
+                    aria-controls="header-search-suggestions"
+                    aria-expanded={showSuggestions && searchSuggestions.length > 0}
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setShowSuggestions(false);
+                        searchInputRef.current?.focus();
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-foreground-light hover:text-primary transition-colors p-1"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
               </form>
+
+              {/* Search Suggestions Dropdown */}
+              {isSearchOpen && showSuggestions && searchSuggestions.length > 0 && (
+                <div
+                  id="header-search-suggestions"
+                  role="listbox"
+                  className="absolute top-full left-0 right-12 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 overflow-hidden"
+                >
+                  <div className="py-1">
+                    {searchSuggestions.map((product, index) => (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.slug}`}
+                        role="option"
+                        aria-selected={index === selectedSuggestionIndex}
+                        onClick={() => {
+                          setShowSuggestions(false);
+                          setSearchQuery('');
+                          setIsSearchOpen(false);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-2.5 transition-colors ${
+                          index === selectedSuggestionIndex
+                            ? 'bg-accent/10 text-accent'
+                            : 'hover:bg-background-secondary'
+                        }`}
+                      >
+                        <Search className="w-4 h-4 text-foreground-light flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-primary font-medium truncate">
+                            {product.name}
+                          </p>
+                          <p className="text-xs text-foreground-muted truncate">
+                            {product.category} · £{product.price.toFixed(2)}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="border-t border-border px-4 py-2 bg-background-secondary">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+                        setShowSuggestions(false);
+                        setSearchQuery('');
+                        setIsSearchOpen(false);
+                      }}
+                      className="text-xs text-accent hover:underline"
+                    >
+                      View all results for &quot;{searchQuery}&quot;
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <button
                 onClick={() => {
                   setIsSearchOpen(!isSearchOpen);
-                  if (isSearchOpen && searchQuery) {
+                  if (isSearchOpen) {
                     setSearchQuery('');
+                    setShowSuggestions(false);
                   }
                 }}
                 aria-label={isSearchOpen ? 'Close search' : 'Open search'}
@@ -329,18 +471,96 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Search */}
+        {/* Mobile Search with Autocomplete */}
         {isSearchOpen && (
           <div className="lg:hidden py-4 border-t border-border animate-fade-in">
-            <form onSubmit={handleSearch}>
-              <Input
-                type="search"
-                placeholder="Search products..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                leftIcon={<Search className="w-4 h-4" strokeWidth={1.5} />}
-              />
-            </form>
+            <div className="relative">
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-light pointer-events-none">
+                    <Search className="w-4 h-4" strokeWidth={1.5} />
+                  </div>
+                  <input
+                    type="search"
+                    placeholder="Search products..."
+                    value={searchQuery}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                      setSearchQuery(e.target.value);
+                      setShowSuggestions(true);
+                      setSelectedSuggestionIndex(-1);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onKeyDown={handleSearchKeyDown}
+                    className="w-full h-11 pl-10 pr-10 bg-white border border-border rounded-lg text-primary text-base placeholder-foreground-light transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                    aria-label="Search products"
+                    aria-autocomplete="list"
+                  />
+                  {searchQuery && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSearchQuery('');
+                        setShowSuggestions(false);
+                      }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-light hover:text-primary transition-colors p-1"
+                      aria-label="Clear search"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </form>
+
+              {/* Mobile Search Suggestions */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                  <div className="py-1 max-h-64 overflow-y-auto">
+                    {searchSuggestions.map((product, index) => (
+                      <Link
+                        key={product.id}
+                        href={`/products/${product.slug}`}
+                        onClick={() => {
+                          setShowSuggestions(false);
+                          setSearchQuery('');
+                          setIsSearchOpen(false);
+                          setIsMenuOpen(false);
+                        }}
+                        className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                          index === selectedSuggestionIndex
+                            ? 'bg-accent/10 text-accent'
+                            : 'hover:bg-background-secondary active:bg-background-secondary'
+                        }`}
+                      >
+                        <Search className="w-4 h-4 text-foreground-light flex-shrink-0" />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm text-primary font-medium truncate">
+                            {product.name}
+                          </p>
+                          <p className="text-xs text-foreground-muted truncate">
+                            {product.category} · £{product.price.toFixed(2)}
+                          </p>
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
+                  <div className="border-t border-border px-4 py-2.5 bg-background-secondary">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+                        setShowSuggestions(false);
+                        setSearchQuery('');
+                        setIsSearchOpen(false);
+                        setIsMenuOpen(false);
+                      }}
+                      className="text-sm text-accent hover:underline"
+                    >
+                      View all results for &quot;{searchQuery}&quot;
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

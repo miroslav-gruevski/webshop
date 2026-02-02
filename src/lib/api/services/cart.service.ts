@@ -7,7 +7,7 @@
  * @module lib/api/services/cart
  */
 
-import type { Cart, CartItem, Product } from '@/types';
+import type { Cart, Product } from '@/types';
 import { apiClient, type ApiResponse } from '../client';
 
 // =============================================================================
@@ -24,6 +24,22 @@ const CART_STORAGE_KEY = 'salto-shop-cart';
 // TYPES
 // =============================================================================
 
+/**
+ * Mock cart item structure for localStorage
+ * TODO: [BACKEND] This will be replaced by the API cart structure
+ */
+interface MockCartItem {
+  id: string;
+  productId: string;
+  quantity: number;
+}
+
+interface MockCart {
+  items: MockCartItem[];
+  totalItems?: number;
+  totalPrice?: number;
+}
+
 export interface AddToCartRequest {
   productId: string;
   quantity: number;
@@ -36,7 +52,7 @@ export interface UpdateCartItemRequest {
 }
 
 export interface CartSyncRequest {
-  items: CartItem[];
+  items: Array<{ product: Product; quantity: number }>;
 }
 
 // =============================================================================
@@ -66,7 +82,14 @@ export const cartService = {
     // =========================================================================
     // MOCK IMPLEMENTATION - Using localStorage
     // =========================================================================
-    const cart = getCartFromStorage();
+    const mockCart = getCartFromStorage();
+    
+    // Convert mock cart to Cart type (mock implementation)
+    const cart: Cart = {
+      items: [],
+      totalItems: mockCart.items.reduce((sum, item) => sum + item.quantity, 0),
+      totalPrice: 0,
+    };
     
     return {
       data: cart,
@@ -85,27 +108,29 @@ export const cartService = {
     // TODO: [BACKEND] Remove mock implementation below
     // =========================================================================
     // MOCK IMPLEMENTATION - Using localStorage
+    // Note: This mock uses a simplified structure; real API will return full Cart
     // =========================================================================
-    const cart = getCartFromStorage();
+    const mockCart = getCartFromStorage();
     
-    const existingItemIndex = cart.items.findIndex(
+    const existingItemIndex = mockCart.items.findIndex(
       item => item.productId === request.productId
     );
     
     if (existingItemIndex >= 0) {
-      cart.items[existingItemIndex].quantity += request.quantity;
+      mockCart.items[existingItemIndex].quantity += request.quantity;
     } else {
-      cart.items.push({
+      mockCart.items.push({
         id: generateId(),
         productId: request.productId,
         quantity: request.quantity,
       });
     }
     
-    saveCartToStorage(cart);
+    saveCartToStorage(mockCart);
     
+    // Return empty cart structure (actual implementation will be replaced by backend)
     return {
-      data: cart,
+      data: { items: [], totalItems: 0, totalPrice: 0 },
       success: true,
     };
     // =========================================================================
@@ -121,22 +146,22 @@ export const cartService = {
     // =========================================================================
     // MOCK IMPLEMENTATION - Using localStorage
     // =========================================================================
-    const cart = getCartFromStorage();
+    const mockCart = getCartFromStorage();
     
-    const itemIndex = cart.items.findIndex(item => item.id === request.itemId);
+    const itemIndex = mockCart.items.findIndex(item => item.id === request.itemId);
     
     if (itemIndex >= 0) {
       if (request.quantity <= 0) {
-        cart.items.splice(itemIndex, 1);
+        mockCart.items.splice(itemIndex, 1);
       } else {
-        cart.items[itemIndex].quantity = request.quantity;
+        mockCart.items[itemIndex].quantity = request.quantity;
       }
     }
     
-    saveCartToStorage(cart);
+    saveCartToStorage(mockCart);
     
     return {
-      data: cart,
+      data: { items: [], totalItems: 0, totalPrice: 0 },
       success: true,
     };
     // =========================================================================
@@ -152,14 +177,14 @@ export const cartService = {
     // =========================================================================
     // MOCK IMPLEMENTATION - Using localStorage
     // =========================================================================
-    const cart = getCartFromStorage();
+    const mockCart = getCartFromStorage();
     
-    cart.items = cart.items.filter(item => item.id !== itemId);
+    mockCart.items = mockCart.items.filter(item => item.id !== itemId);
     
-    saveCartToStorage(cart);
+    saveCartToStorage(mockCart);
     
     return {
-      data: cart,
+      data: { items: [], totalItems: 0, totalPrice: 0 },
       success: true,
     };
     // =========================================================================
@@ -175,11 +200,11 @@ export const cartService = {
     // =========================================================================
     // MOCK IMPLEMENTATION - Using localStorage
     // =========================================================================
-    const emptyCart: Cart = { items: [] };
-    saveCartToStorage(emptyCart);
+    const emptyMockCart: MockCart = { items: [], totalItems: 0, totalPrice: 0 };
+    saveCartToStorage(emptyMockCart);
     
     return {
-      data: emptyCart,
+      data: { items: [], totalItems: 0, totalPrice: 0 },
       success: true,
     };
     // =========================================================================
@@ -196,11 +221,17 @@ export const cartService = {
     // =========================================================================
     // MOCK IMPLEMENTATION - Just return the items as-is
     // =========================================================================
-    const cart: Cart = { items: request.items };
-    saveCartToStorage(cart);
+    // Convert Cart items to mock format for storage
+    const mockItems: MockCartItem[] = request.items.map((item, index) => ({
+      id: `sync-${index}`,
+      productId: item.product.id,
+      quantity: item.quantity,
+    }));
+    
+    saveCartToStorage({ items: mockItems, totalItems: 0, totalPrice: 0 });
     
     return {
-      data: cart,
+      data: { items: request.items, totalItems: 0, totalPrice: 0 },
       success: true,
     };
     // =========================================================================
@@ -212,20 +243,20 @@ export const cartService = {
 // TODO: [BACKEND] These will be replaced by API calls
 // =============================================================================
 
-function getCartFromStorage(): Cart {
+function getCartFromStorage(): MockCart {
   if (typeof window === 'undefined') {
-    return { items: [] };
+    return { items: [], totalItems: 0, totalPrice: 0 };
   }
   
   try {
     const stored = localStorage.getItem(CART_STORAGE_KEY);
-    return stored ? JSON.parse(stored) : { items: [] };
+    return stored ? JSON.parse(stored) : { items: [], totalItems: 0, totalPrice: 0 };
   } catch {
-    return { items: [] };
+    return { items: [], totalItems: 0, totalPrice: 0 };
   }
 }
 
-function saveCartToStorage(cart: Cart): void {
+function saveCartToStorage(cart: MockCart): void {
   if (typeof window === 'undefined') {
     return;
   }

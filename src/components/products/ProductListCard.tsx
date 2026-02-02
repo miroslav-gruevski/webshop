@@ -1,9 +1,9 @@
 'use client';
 
-import { memo } from 'react';
+import { memo, useState, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ShoppingCart, Check, Lock, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Check, Package, ChevronRight } from 'lucide-react';
 import { Product } from '@/types';
 import { useCart } from '@/context/CartContext';
 import { Button, Badge, FavouriteButton, useToast } from '@/components/ui';
@@ -21,6 +21,7 @@ interface ProductListCardProps {
 const ProductListCard = memo(function ProductListCard({ product }: ProductListCardProps) {
   const { addToCart, isInCart } = useCart();
   const { addToast } = useToast();
+  const [imageError, setImageError] = useState(false);
   const inCart = isInCart(product.id);
 
   const handleAddToCart = (e: React.MouseEvent) => {
@@ -30,13 +31,17 @@ const ProductListCard = memo(function ProductListCard({ product }: ProductListCa
     addToast('success', `${product.name} added to cart`);
   };
 
+  const handleImageError = useCallback(() => {
+    setImageError(true);
+  }, []);
+
   const discountPercentage = product.originalPrice
     ? Math.round(
         ((product.originalPrice - product.price) / product.originalPrice) * 100
       )
     : null;
 
-  const isExternalImage = product.image.startsWith('http');
+  const hasValidImage = product.image && product.image.startsWith('http') && !imageError;
 
   return (
     <article className="relative group bg-white rounded-xl border border-border hover:border-accent/50 transition-all duration-300 hover:shadow-lg">
@@ -52,18 +57,19 @@ const ProductListCard = memo(function ProductListCard({ product }: ProductListCa
       >
         {/* Image Container */}
         <div className="relative w-full sm:w-40 md:w-48 aspect-square sm:aspect-auto sm:h-40 md:h-48 flex-shrink-0 bg-background-secondary overflow-hidden rounded-lg">
-          {isExternalImage ? (
+          {hasValidImage ? (
             <Image
               src={product.image}
               alt={product.name}
               fill
               className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 640px) 100vw, 192px"
+              onError={handleImageError}
             />
           ) : (
             <div className="absolute inset-0 bg-gradient-to-br from-background-secondary to-background-tertiary flex items-center justify-center">
               <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center shadow-sm">
-                <Lock className="w-6 h-6 text-primary" strokeWidth={1.5} aria-hidden="true" />
+                <Package className="w-6 h-6 text-foreground-light/50" strokeWidth={1.5} aria-hidden="true" />
               </div>
             </div>
           )}

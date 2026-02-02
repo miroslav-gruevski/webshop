@@ -73,12 +73,14 @@ export function formatDate(
   
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
-  const formatOptions: Intl.DateTimeFormatOptions = {
+  const formatOptionsMap: Record<string, Intl.DateTimeFormatOptions> = {
     full: { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' },
     long: { year: 'numeric', month: 'long', day: 'numeric' },
     medium: { year: 'numeric', month: 'short', day: 'numeric' },
     short: { year: 'numeric', month: '2-digit', day: '2-digit' },
-  }[format];
+  };
+  
+  const formatOptions = formatOptionsMap[format];
 
   return new Intl.DateTimeFormat(locale, formatOptions).format(dateObj);
 }

@@ -1,9 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import Image from 'next/image';
-import { ShoppingCart, Trash2, Minus, Plus, ArrowRight, ArrowLeft, Lock } from 'lucide-react';
+import { ShoppingCart, Trash2, Minus, Plus, ArrowRight, ArrowLeft } from 'lucide-react';
 import { Button, useToast } from '@/components/ui';
+import { CartItemImage } from '@/components/cart';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
 
@@ -80,22 +80,12 @@ export default function CartPage() {
               className="bg-white rounded-xl p-4 sm:p-6 border border-border flex flex-col sm:flex-row gap-4"
             >
               {/* Product Image */}
-              <Link 
+              <CartItemImage
+                src={item.product.image}
+                alt={item.product.name}
                 href={`/products/${item.product.slug}`}
-                className="w-full sm:w-32 h-32 bg-background-secondary rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden relative group"
-              >
-                {item.product.image.startsWith('http') ? (
-                  <Image
-                    src={item.product.image}
-                    alt={item.product.name}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-300"
-                    sizes="128px"
-                  />
-                ) : (
-                  <Lock className="w-12 h-12 text-primary" strokeWidth={1.5} />
-                )}
-              </Link>
+                size="md"
+              />
 
               {/* Product Details */}
               <div className="flex-1 min-w-0">

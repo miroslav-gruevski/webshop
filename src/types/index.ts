@@ -95,8 +95,8 @@ export interface CartItemRequest {
  */
 export interface Cart {
   items: CartItem[];
-  totalItems?: number;
-  totalPrice?: number;
+  totalItems: number;
+  totalPrice: number;
 }
 
 /**

@@ -1,12 +1,39 @@
 'use client';
 
-import { useEffect, useCallback, useRef } from 'react';
-import { X, Minus, Plus, ShoppingCart, Trash2, Lock } from 'lucide-react';
+import { useEffect, useCallback, useRef, useState } from 'react';
+import { X, Minus, Plus, ShoppingCart, Trash2, Package } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui';
 import { useCart } from '@/context/CartContext';
 import { useFocusTrap } from '@/hooks/useFocusTrap';
+
+// Mini image component with error handling for drawer
+function DrawerItemImage({ src, alt, href, onNavigate }: { src: string; alt: string; href: string; onNavigate: () => void }) {
+  const [hasError, setHasError] = useState(false);
+  const hasValidImage = src && src.startsWith('http') && !hasError;
+  
+  return (
+    <Link 
+      href={href}
+      onClick={onNavigate}
+      className="w-12 h-12 bg-white rounded flex items-center justify-center flex-shrink-0 border border-border overflow-hidden relative"
+    >
+      {hasValidImage ? (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          className="object-cover"
+          sizes="48px"
+          onError={() => setHasError(true)}
+        />
+      ) : (
+        <Package className="w-5 h-5 text-foreground-light/40" strokeWidth={1.5} aria-hidden="true" />
+      )}
+    </Link>
+  );
+}
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -107,23 +134,12 @@ export default function CartDrawer({ isOpen, onClose }: CartDrawerProps) {
                   {/* Bottom row: Image + Quantity controls */}
                   <div className="flex items-center gap-3">
                     {/* Image */}
-                    <Link 
+                    <DrawerItemImage
+                      src={item.product.image}
+                      alt={item.product.name}
                       href={`/products/${item.product.slug}`}
-                      onClick={onClose}
-                      className="w-12 h-12 bg-white rounded flex items-center justify-center flex-shrink-0 border border-border overflow-hidden relative"
-                    >
-                      {item.product.image.startsWith('http') ? (
-                        <Image
-                          src={item.product.image}
-                          alt={item.product.name}
-                          fill
-                          className="object-cover"
-                          sizes="48px"
-                        />
-                      ) : (
-                        <Lock className="w-6 h-6 text-primary" strokeWidth={1.5} aria-hidden="true" />
-                      )}
-                    </Link>
+                      onNavigate={onClose}
+                    />
 
                     {/* Quantity controls */}
                     <div className="flex items-center gap-1" role="group" aria-label={`Quantity for ${item.product.name}`}>

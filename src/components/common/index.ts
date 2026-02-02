@@ -2,7 +2,7 @@
  * Common Components Barrel Export
  * 
  * @example
- * import { ErrorBoundary, Skeleton, ProductCardSkeleton } from '@/components/common';
+ * import { ErrorBoundary, Skeleton, ProductCardSkeleton, ImageWithFallback } from '@/components/common';
  */
 
 export { default as ErrorBoundary, ErrorFallback } from './ErrorBoundary';
@@ -18,3 +18,4 @@ export {
   AvatarSkeleton,
   PageSkeleton,
 } from './Skeleton';
+export { ImageWithFallback, ProductImage, AvatarImage } from './ImageWithFallback';
