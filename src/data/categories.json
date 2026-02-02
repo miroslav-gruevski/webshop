@@ -1,0 +1,50 @@
+[
+  {
+    "id": "1",
+    "name": "Electronic Locks",
+    "slug": "electronic-locks",
+    "description": "Smart electronic door locks with advanced access control features. RFID, Bluetooth, and mobile access compatible.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/xs4-one-list-ok.png?itok=27oXgqyn",
+    "productCount": 12
+  },
+  {
+    "id": "2",
+    "name": "Wall Readers",
+    "slug": "wall-readers",
+    "description": "Wall-mounted access control readers for seamless credential verification and building security.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/portada-xs4-one-s-eu.png?itok=qVdZwuVA",
+    "productCount": 8
+  },
+  {
+    "id": "3",
+    "name": "Electronic Cylinders",
+    "slug": "electronic-cylinders",
+    "description": "Replace mechanical cylinders with smart electronic versions. Easy retrofit for existing doors.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/neo-eu-list.jpg?itok=QQuuficY",
+    "productCount": 6
+  },
+  {
+    "id": "4",
+    "name": "Locker Locks",
+    "slug": "locker-locks",
+    "description": "Electronic locker and cabinet locks for gyms, offices, schools, and hospitality venues.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/neoxx-padlock-g4-list_0.png?itok=EA1dtfcB",
+    "productCount": 5
+  },
+  {
+    "id": "5",
+    "name": "Electronic Padlocks",
+    "slug": "padlocks",
+    "description": "Robust electronic padlocks for gates, storage units, and outdoor applications.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/neoxx-padlock-g4-list_0.png?itok=EA1dtfcB",
+    "productCount": 4
+  },
+  {
+    "id": "6",
+    "name": "Credentials",
+    "slug": "credentials",
+    "description": "Smart cards, key fobs, wristbands, and mobile credentials for SALTO access systems.",
+    "image": "https://saltosystems.com/sites/default/files/styles/breakpoint_1920/public/images/products/wearable-smart-wristbands-list-ok.png?itok=cm9HBQtu",
+    "productCount": 10
+  }
+]
