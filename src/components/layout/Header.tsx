@@ -14,6 +14,7 @@ import {
   Phone,
   Mail,
   MapPin,
+  ExternalLink,
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -23,11 +24,14 @@ import { Product } from '@/types';
 
 const products = productsData as unknown as Product[];
 
+const CORP_URL = 'https://corp-site-phi.vercel.app/';
+
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Products', href: '/products' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
+  { name: 'ECS Corporate', href: CORP_URL, external: true },
 ];
 
 export default function Header() {
@@ -39,12 +43,15 @@ export default function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedSuggestionIndex, setSelectedSuggestionIndex] = useState(-1);
   const userMenuRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const mobileMenuRef = useRef<HTMLDivElement>(null);
+  const scrollYRef = useRef(0);
 
   // Compute search suggestions
   const searchSuggestions = useMemo(() => {
@@ -131,6 +138,67 @@ export default function Header() {
     };
   }, [handleKeyDown, handleClickOutside]);
 
+  // Add shadow on scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Lock body scroll when mobile menu is open
+  useEffect(() => {
+    if (isMenuOpen) {
+      scrollYRef.current = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollYRef.current}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+    } else {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+      window.scrollTo(0, scrollYRef.current);
+    }
+    return () => {
+      document.body.style.position = '';
+      document.body.style.top = '';
+      document.body.style.left = '';
+      document.body.style.right = '';
+    };
+  }, [isMenuOpen]);
+
+  // Focus trap for mobile menu
+  useEffect(() => {
+    if (!isMenuOpen || !mobileMenuRef.current) return;
+
+    const menu = mobileMenuRef.current;
+    const focusableSelector =
+      'a[href], button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const getFocusableElements = () =>
+      Array.from(menu.querySelectorAll<HTMLElement>(focusableSelector));
+
+    const handleTabKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const focusable = getFocusableElements();
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleTabKey);
+    return () => document.removeEventListener('keydown', handleTabKey);
+  }, [isMenuOpen]);
+
   // Focus search input when opened
   useEffect(() => {
     if (isSearchOpen && searchInputRef.current) {
@@ -146,9 +214,9 @@ export default function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-border">
-      {/* Top Bar */}
-      <div className="hidden lg:block bg-background-secondary border-b border-border">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl backdrop-saturate-150">
+      {/* Top Bar - hides on scroll */}
+      <div className={`hidden lg:block bg-background-secondary border-b border-border transition-all duration-300 overflow-hidden ${isScrolled ? 'max-h-0 border-transparent' : 'max-h-12'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-10">
             <p className="text-xs tracking-[0.2em] uppercase text-primary font-medium">
@@ -182,6 +250,7 @@ export default function Header() {
       </div>
 
       {/* Main Header */}
+      <div className={`border-b transition-shadow duration-300 ${isScrolled ? 'shadow-md border-transparent' : 'border-border'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-[72px]">
           {/* Logo */}
@@ -199,18 +268,28 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
             {navigation.map((item) => {
-              const isActive = pathname === item.href || 
-                (item.href !== '/' && pathname.startsWith(item.href));
-              return (
+              const isExternal = 'external' in item && item.external;
+              const isActive = !isExternal && (pathname === item.href || 
+                (item.href !== '/' && pathname.startsWith(item.href)));
+              return isExternal ? (
+                <a
+                  key={item.name}
+                  href={item.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="nav-link flex items-center gap-1.5 text-sm font-medium tracking-wide transition-colors duration-200 h-[72px]"
+                  style={{ color: 'var(--primary)' }}
+                >
+                  {item.name}
+                  <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
+                </a>
+              ) : (
                 <Link
                   key={item.name}
                   href={item.href}
                   aria-current={isActive ? 'page' : undefined}
-                  className={`text-sm font-medium tracking-wide transition-colors duration-200 h-[72px] flex items-center ${
-                    isActive 
-                      ? 'text-primary' 
-                      : 'text-foreground-light hover:text-accent'
-                  }`}
+                  className="nav-link text-sm font-medium tracking-wide transition-colors duration-200 h-[72px] flex items-center"
+                  style={{ color: isActive ? 'var(--accent)' : 'var(--primary)' }}
                 >
                   {item.name}
                 </Link>
@@ -339,11 +418,7 @@ export default function Header() {
             </div>
 
             {/* Quote Request */}
-            <Link href="/contact">
-              <Button variant="secondary" size="sm">
-                Quote request
-              </Button>
-            </Link>
+            {/* Get Quote button removed */}
 
             {/* Cart */}
             <Link
@@ -471,117 +546,143 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Mobile Search with Autocomplete */}
-        {isSearchOpen && (
-          <div className="lg:hidden py-4 border-t border-border animate-fade-in">
-            <div className="relative">
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <div className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-light pointer-events-none">
-                    <Search className="w-4 h-4" strokeWidth={1.5} />
-                  </div>
-                  <input
-                    type="search"
-                    placeholder="Search products..."
-                    value={searchQuery}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      setSearchQuery(e.target.value);
-                      setShowSuggestions(true);
-                      setSelectedSuggestionIndex(-1);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                    onKeyDown={handleSearchKeyDown}
-                    className="w-full h-11 pl-10 pr-10 bg-white border border-border rounded-lg text-primary text-base placeholder-foreground-light transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
-                    aria-label="Search products"
-                    aria-autocomplete="list"
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchQuery('');
-                        setShowSuggestions(false);
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-light hover:text-primary transition-colors p-1"
-                      aria-label="Clear search"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </form>
+      </div>
+      </div>
 
-              {/* Mobile Search Suggestions */}
-              {showSuggestions && searchSuggestions.length > 0 && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 overflow-hidden">
-                  <div className="py-1 max-h-64 overflow-y-auto">
-                    {searchSuggestions.map((product, index) => (
-                      <Link
-                        key={product.id}
-                        href={`/products/${product.slug}`}
-                        onClick={() => {
-                          setShowSuggestions(false);
-                          setSearchQuery('');
-                          setIsSearchOpen(false);
-                          setIsMenuOpen(false);
-                        }}
-                        className={`flex items-center gap-3 px-4 py-3 transition-colors ${
-                          index === selectedSuggestionIndex
-                            ? 'bg-accent/10 text-accent'
-                            : 'hover:bg-background-secondary active:bg-background-secondary'
-                        }`}
-                      >
-                        <Search className="w-4 h-4 text-foreground-light flex-shrink-0" />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm text-primary font-medium truncate">
-                            {product.name}
-                          </p>
-                          <p className="text-xs text-foreground-muted truncate">
-                            {product.category} · £{product.price.toFixed(2)}
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                  <div className="border-t border-border px-4 py-2.5 bg-background-secondary">
-                    <button
-                      type="button"
+      {/* Mobile Search with Autocomplete */}
+      {isSearchOpen && (
+        <div className="lg:hidden py-4 px-4 sm:px-6 border-t border-border animate-fade-in">
+          <div className="relative max-w-7xl mx-auto">
+            <form onSubmit={handleSearch}>
+              <div className="relative">
+                <div className="absolute left-3 top-1/2 -translate-y-1/2 text-foreground-light pointer-events-none">
+                  <Search className="w-4 h-4" strokeWidth={1.5} />
+                </div>
+                <input
+                  type="search"
+                  placeholder="Search products..."
+                  value={searchQuery}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                    setSelectedSuggestionIndex(-1);
+                  }}
+                  onFocus={() => setShowSuggestions(true)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="w-full h-11 pl-10 pr-10 bg-white border border-border rounded-lg text-primary text-base placeholder-foreground-light transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-accent/20 focus:border-accent"
+                  aria-label="Search products"
+                  aria-autocomplete="list"
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      setShowSuggestions(false);
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-foreground-light hover:text-primary transition-colors p-1"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+            </form>
+
+            {/* Mobile Search Suggestions */}
+            {showSuggestions && searchSuggestions.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-border rounded-lg shadow-lg z-50 overflow-hidden">
+                <div className="py-1 max-h-64 overflow-y-auto">
+                  {searchSuggestions.map((product, index) => (
+                    <Link
+                      key={product.id}
+                      href={`/products/${product.slug}`}
                       onClick={() => {
-                        router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
                         setShowSuggestions(false);
                         setSearchQuery('');
                         setIsSearchOpen(false);
                         setIsMenuOpen(false);
                       }}
-                      className="text-sm text-accent hover:underline"
+                      className={`flex items-center gap-3 px-4 py-3 transition-colors ${
+                        index === selectedSuggestionIndex
+                          ? 'bg-accent/10 text-accent'
+                          : 'hover:bg-background-secondary active:bg-background-secondary'
+                      }`}
                     >
-                      View all results for &quot;{searchQuery}&quot;
-                    </button>
-                  </div>
+                      <Search className="w-4 h-4 text-foreground-light flex-shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm text-primary font-medium truncate">
+                          {product.name}
+                        </p>
+                        <p className="text-xs text-foreground-muted truncate">
+                          {product.category} · £{product.price.toFixed(2)}
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
                 </div>
-              )}
-            </div>
+                <div className="border-t border-border px-4 py-2.5 bg-background-secondary">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      router.push(`/products?search=${encodeURIComponent(searchQuery)}`);
+                      setShowSuggestions(false);
+                      setSearchQuery('');
+                      setIsSearchOpen(false);
+                      setIsMenuOpen(false);
+                    }}
+                    className="text-sm text-accent hover:underline"
+                  >
+                    View all results for &quot;{searchQuery}&quot;
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
+      )}
 
-        {/* Mobile Menu */}
-        {isMenuOpen && (
-          <nav className="lg:hidden py-4 border-t border-border animate-fade-in">
+      {/* Mobile Menu — fills remaining viewport height */}
+      {isMenuOpen && (
+        <div
+          ref={mobileMenuRef}
+          className="lg:hidden bg-white border-t border-border overflow-y-auto overscroll-contain"
+          style={{ maxHeight: 'calc(100dvh - 72px)' }}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Mobile navigation menu"
+        >
+          <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-4" aria-label="Mobile navigation">
             <div className="flex flex-col gap-1">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`px-4 py-3 rounded-lg text-base font-medium transition-colors ${
-                    pathname === item.href
-                      ? 'bg-accent-bg text-accent'
-                      : 'text-foreground-muted hover:bg-background-secondary hover:text-primary'
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {navigation.map((item) => {
+                const isExternal = 'external' in item && item.external;
+                return isExternal ? (
+                  <a
+                    key={item.name}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-1.5 px-3 py-3 rounded-lg text-sm font-medium text-primary hover:bg-background-secondary transition-colors"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
+                  </a>
+                ) : (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
+                      pathname === item.href
+                        ? 'text-accent bg-accent-bg'
+                        : 'text-primary hover:bg-background-secondary'
+                    }`}
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {item.name}
+                  </Link>
+                );
+              })}
               <div className="border-t border-border mt-2 pt-2">
                 {isAuthenticated ? (
                   <>
@@ -619,8 +720,8 @@ export default function Header() {
               </div>
             </div>
           </nav>
-        )}
-      </div>
+        </div>
+      )}
     </header>
   );
 }

@@ -44,7 +44,7 @@ const ProductCard = memo(function ProductCard({ product }: ProductCardProps) {
   return (
     <article className="relative group bg-white rounded-xl border border-border hover:border-accent/50 transition-all duration-300 hover:shadow-lg flex flex-col">
       {/* Favourite button - Outside image container to avoid overflow clipping */}
-      <div className="absolute top-3 right-3 z-50">
+      <div className="absolute top-3 right-3 z-10">
         <FavouriteButton productId={product.id} size="sm" />
       </div>
 

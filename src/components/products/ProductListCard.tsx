@@ -46,7 +46,7 @@ const ProductListCard = memo(function ProductListCard({ product }: ProductListCa
   return (
     <article className="relative group bg-white rounded-xl border border-border hover:border-accent/50 transition-all duration-300 hover:shadow-lg">
       {/* Favourite button - Positioned on the image area */}
-      <div className="absolute top-6 right-6 sm:top-6 sm:left-[9.5rem] md:left-[11.5rem] sm:right-auto z-50">
+      <div className="absolute top-6 right-6 sm:top-6 sm:left-[9.5rem] md:left-[11.5rem] sm:right-auto z-10">
         <FavouriteButton productId={product.id} size="sm" />
       </div>
 

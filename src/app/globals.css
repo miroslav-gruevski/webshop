@@ -6,10 +6,10 @@
   --primary-light: #2d4a6f;
   --primary-dark: #152a47;
   
-  /* Accent Colors */
-  --accent: #c4836b;
-  --accent-light: #d4957d;
-  --accent-hover: #b5745c;
+  /* Accent Colors – WCAG AA compliant */
+  --accent: #a2674f;
+  --accent-light: #b8806a;
+  --accent-hover: #8d5a43;
   --accent-bg: #fbe9e7;
   --accent-border: #ffccbc;
   
@@ -21,7 +21,7 @@
   /* Text Colors */
   --foreground: #1e3a5f;
   --foreground-muted: #5a6a7a;
-  --foreground-light: #8a96a3;
+  --foreground-light: #637282;
   
   /* Borders */
   --border: #e8eaed;
@@ -327,6 +327,12 @@ img {
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--primary);
+}
+
+/* Nav link hover - uses !important to override Tailwind utility specificity */
+a.nav-link:hover,
+button.nav-link:hover {
+  color: var(--accent) !important;
 }
 
 /* Link with chevron style */

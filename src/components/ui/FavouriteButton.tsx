@@ -53,7 +53,7 @@ export default function FavouriteButton({
   };
 
   return (
-    <div className="relative" style={{ zIndex: showSignInHint ? 9999 : 'auto' }}>
+    <div className="relative" style={{ zIndex: showSignInHint ? 30 : 'auto' }}>
       <button
         onClick={handleClick}
         aria-label={isFav ? 'Remove from favourites' : 'Add to favourites'}
@@ -82,7 +82,7 @@ export default function FavouriteButton({
       {showTooltip && showSignInHint && (
         <div 
           className="absolute right-full top-1/2 -translate-y-1/2 mr-2 animate-fade-in pointer-events-auto"
-          style={{ zIndex: 99999 }}
+          style={{ zIndex: 30 }}
         >
           <div className="bg-primary text-white text-xs px-3 py-2 rounded-lg whitespace-nowrap shadow-xl">
             <a href="/login" className="underline hover:no-underline">
