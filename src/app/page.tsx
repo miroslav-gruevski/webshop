@@ -111,12 +111,9 @@ export default function HomePage() {
                     <ArrowRight className="w-5 h-5 ml-2" strokeWidth={2} />
                   </Button>
                 </Link>
-                <a href={process.env.NEXT_PUBLIC_CORP_URL || 'https://corp-site-phi.vercel.app'} target="_blank" rel="noopener noreferrer">
-                  <Button variant="secondary" size="lg" className="px-8">
-                    Our Services
-                    <ExternalLink className="w-4 h-4 ml-2" strokeWidth={1.5} />
-                  </Button>
-                </a>
+                <Button variant="secondary" size="lg" className="px-8">
+                  Our Services
+                </Button>
               </div>
               
               {/* Trust badges */}

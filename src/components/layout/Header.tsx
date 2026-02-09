@@ -24,14 +24,12 @@ import { Product } from '@/types';
 
 const products = productsData as unknown as Product[];
 
-const CORP_URL = 'https://corp-site-phi.vercel.app/';
-
 const navigation = [
   { name: 'Home', href: '/' },
   { name: 'Products', href: '/products' },
   { name: 'About', href: '/about' },
   { name: 'Contact', href: '/contact' },
-  { name: 'ECS Corporate', href: CORP_URL, external: true },
+  { name: 'ECS Corporate', external: true },
 ];
 
 export default function Header() {
@@ -272,17 +270,13 @@ export default function Header() {
               const isActive = !isExternal && (pathname === item.href || 
                 (item.href !== '/' && pathname.startsWith(item.href)));
               return isExternal ? (
-                <a
+                <span
                   key={item.name}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="nav-link flex items-center gap-1.5 text-sm font-medium tracking-wide transition-colors duration-200 h-[72px]"
+                  className="flex items-center gap-1.5 text-sm font-medium tracking-wide h-[72px]"
                   style={{ color: 'var(--primary)' }}
                 >
                   {item.name}
-                  <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
-                </a>
+                </span>
               ) : (
                 <Link
                   key={item.name}
@@ -657,17 +651,12 @@ export default function Header() {
               {navigation.map((item) => {
                 const isExternal = 'external' in item && item.external;
                 return isExternal ? (
-                  <a
+                  <span
                     key={item.name}
-                    href={item.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-1.5 px-3 py-3 rounded-lg text-sm font-medium text-primary hover:bg-background-secondary transition-colors"
-                    onClick={() => setIsMenuOpen(false)}
+                    className="flex items-center px-3 py-3 rounded-lg text-sm font-medium text-primary"
                   >
                     {item.name}
-                    <ExternalLink className="w-3.5 h-3.5" strokeWidth={1.5} />
-                  </a>
+                  </span>
                 ) : (
                   <Link
                     key={item.name}
