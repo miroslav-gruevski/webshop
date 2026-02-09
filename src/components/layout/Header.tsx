@@ -24,7 +24,7 @@ import { Product } from '@/types';
 
 const products = productsData as unknown as Product[];
 
-const navigation = [
+const navigation: { name: string; href?: string; external?: boolean }[] = [
   { name: 'Home', href: '/' },
   { name: 'Products', href: '/products' },
   { name: 'About', href: '/about' },
@@ -266,8 +266,8 @@ export default function Header() {
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center gap-8" aria-label="Main navigation">
             {navigation.map((item) => {
-              const isExternal = 'external' in item && item.external;
-              const isActive = !isExternal && (pathname === item.href || 
+              const isExternal = item.external;
+              const isActive = !isExternal && item.href && (pathname === item.href || 
                 (item.href !== '/' && pathname.startsWith(item.href)));
               return isExternal ? (
                 <span
@@ -280,7 +280,7 @@ export default function Header() {
               ) : (
                 <Link
                   key={item.name}
-                  href={item.href}
+                  href={item.href!}
                   aria-current={isActive ? 'page' : undefined}
                   className="nav-link text-sm font-medium tracking-wide transition-colors duration-200 h-[72px] flex items-center"
                   style={{ color: isActive ? 'var(--accent)' : 'var(--primary)' }}
@@ -649,7 +649,7 @@ export default function Header() {
           <nav className="max-w-7xl mx-auto px-4 sm:px-6 py-4" aria-label="Mobile navigation">
             <div className="flex flex-col gap-1">
               {navigation.map((item) => {
-                const isExternal = 'external' in item && item.external;
+                const isExternal = item.external;
                 return isExternal ? (
                   <span
                     key={item.name}
@@ -660,7 +660,7 @@ export default function Header() {
                 ) : (
                   <Link
                     key={item.name}
-                    href={item.href}
+                    href={item.href!}
                     className={`flex items-center px-3 py-3 rounded-lg text-sm font-medium transition-colors ${
                       pathname === item.href
                         ? 'text-accent bg-accent-bg'
